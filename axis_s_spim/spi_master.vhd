@@ -60,7 +60,7 @@ architecture behavioral of spi_master is
   signal receive_flag  : boolean := false;
 
   signal output_sr     : std_logic_vector(7 downto 0);
-  signal input_sr      : std_logic_vector(6 downto 0);
+  signal input_sr      : std_logic_vector(7 downto 0);
 
   signal rxdata_en     : std_logic;
   signal rxdata_s      : std_logic_vector(7 downto 0) := "00000001";
@@ -158,9 +158,9 @@ begin
       if spck_en = '1' then
         if busy_s = '0' then
           rxdata_en <= '0';
-          input_sr <= "0000000";
+          input_sr <= "00000000";
         elsif rx_en = '1' then
-          input_sr <= "0000000";
+          input_sr <= "00000000";
           rxdata_s <= input_sr(7 downto 0);
           rxdata_en <= '1';
         else

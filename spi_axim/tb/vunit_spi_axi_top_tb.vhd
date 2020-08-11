@@ -39,7 +39,6 @@ end;
 
 architecture tb of vunit_spi_axi_top_tb is
 
-    constant  spi_cpol      : std_logic := '0';
     constant  ID_WIDTH      : integer := 1;
     constant  ID_VALUE      : integer := 0;
     constant  ADDR_BYTE_NUM : integer := 4;
@@ -127,12 +126,14 @@ begin
 
     spi_axi_top_i : entity stdcores.spi_axi_top
         generic map (
-            spi_cpol      => spi_cpol,
+            CPOL          => '0',
+            CPHA          => '0',
             ID_WIDTH      => ID_WIDTH,
             ID_VALUE      => ID_VALUE,
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
-            serial_num_rw => serial_num_rw
+            serial_num_rw => serial_num_rw,
+            native_clock_mode => true
         )
         port map (
             rst_i         => rst_i,

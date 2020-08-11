@@ -37,7 +37,6 @@ end;
 
 architecture tb of vunit_spi_axi_top_2_tb is
 
-    constant  spi_cpol      : std_logic := '0';
     constant  ID_WIDTH      : integer := 1;
     constant  ID_VALUE      : integer := 0;
     constant  ADDR_BYTE_NUM : integer := 4;
@@ -118,12 +117,14 @@ begin
 
     spi_axi_top_i : entity stdcores.spi_axi_top
         generic map (
-            spi_cpol      => spi_cpol,
+            CPOL          => '0',
+            CPHA          => '0',
             ID_WIDTH      => ID_WIDTH,
             ID_VALUE      => ID_VALUE,
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
-            serial_num_rw => serial_num_rw
+            serial_num_rw => serial_num_rw,
+            native_clock_mode => true
         )
         port map (
             rst_i         => rst_i,
@@ -180,12 +181,12 @@ begin
         if (M_AXI_AWVALID = '1') then
             waddr_aux_v := M_AXI_AWADDR;
             waddr_ready_v := '1';
-            M_AXI_AWREADY <= transport '0' after 2*10 ns;
+            -- M_AXI_AWREADY <= '0' transport after 2*10 ns;
         end if;
         if (M_AXI_WVALID = '1') then
             wdata_aux_v := M_AXI_WDATA;
             wdata_ready_v := '1';
-            M_AXI_WREADY <= transport '0' after 2*10 ns;
+            -- M_AXI_WREADY <= '0' transport after 2*10 ns;
         end if;
 
         if (wdata_ready_v = '1' and waddr_ready_v = '1') then
@@ -306,7 +307,7 @@ begin
             -- check data byte(s)
             for i in 0 to data_length_v-1 loop
                 info("Byte " & to_string(byte_idx_v));
-                expected_value_v := data_wr(byte_idx_v-fast_read_offset_v);
+                expected_value_v := data_wr(byte_idx_v);
                 check_equal(data_rd(byte_idx_v), expected_value_v, "Testing data byte");
 
                 byte_idx_v := byte_idx_v + 1;
@@ -350,15 +351,17 @@ begin
             for i in 1 downto ADDR_BYTE_NUM loop
                 spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
             end loop;
+
+            spi_txdata_s(ADDR_BYTE_NUM+1) <= x"AC";
             
-            for i in ADDR_BYTE_NUM+1 to ADDR_BYTE_NUM+num_words_c*DATA_BYTE_NUM loop
+            for i in ADDR_BYTE_NUM+2 to ADDR_BYTE_NUM+num_words_c*DATA_BYTE_NUM+1 loop
                 spi_txdata_s(i) <= to_std_logic_vector(i, 8);
             end loop;
 
             wait for 100 ns;
             -- fast write - n words
             -- fast write and write are the same 
-            spi_bus(spi_txdata_s, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
+            spi_bus(spi_txdata_s, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 2);
 
             wait for 1000 ns;
             -- now read the content of the memory
@@ -381,6 +384,7 @@ begin
                 wait for 100 ns;
                 test_write;
                 wait for 100 ns;
+                test_write;
 
                 test_runner_cleanup(runner);
 
@@ -389,6 +393,7 @@ begin
                 wait for 100 ns;
                 test_fast_write;
                 wait for 100 ns;
+                test_fast_write;
 
                 test_runner_cleanup(runner);
             end if;

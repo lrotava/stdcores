@@ -1,21 +1,23 @@
 [*]
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Tue Jul 21 12:27:08 2020
+[*] Tue Aug 11 09:53:02 2020
 [*]
-[dumpfile] "/home/lucas/git/hdl/hdl-dev/stdcores/spi_axim/tb/vunit_out/test_output/tb_lib.vunit_spi_axi_top_2_tb.read.something_ec37d9a67932695f70f84ae2746595a09c30e370/ghdl/wave.ghw"
-[dumpfile_mtime] "Tue Jul 21 12:26:20 2020"
-[dumpfile_size] 577518
+[dumpfile] "/home/lucas/git/hdl/hdl-dev/stdcores/spi_axim/tb/vunit_out/test_output/tb_lib.vunit_spi_axi_top_2_tb.write.something_68c2fd5330baa908934fcb2b6d11587b524f7140/ghdl/wave.ghw"
+[dumpfile_mtime] "Tue Aug 11 09:47:16 2020"
+[dumpfile_size] 574218
 [savefile] "/home/lucas/git/hdl/hdl-dev/stdcores/spi_axim/tb/spi_axi_write.gtkw"
-[timestart] 0
-[size] 1802 972
-[pos] 1702 -116
-*-34.000000 9770000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 41094000000
+[size] 1791 945
+[pos] -29 -29
+*-26.000000 41390000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.vunit_spi_axi_top_2_tb.
+[treeopen] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.
+[treeopen] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.
 [sst_width] 223
 [signals_width] 198
 [sst_expanded] 1
-[sst_vpaned_height] 596
+[sst_vpaned_height] 576
 @28
 top.vunit_spi_axi_top_2_tb.spcs_s
 top.vunit_spi_axi_top_2_tb.spck_s
@@ -37,7 +39,7 @@ top.vunit_spi_axi_top_2_tb.m_axi_wready
 top.vunit_spi_axi_top_2_tb.m_axi_wvalid
 top.vunit_spi_axi_top_2_tb.m_axi_bready
 top.vunit_spi_axi_top_2_tb.m_axi_bvalid
-@29
+top.vunit_spi_axi_top_2_tb.spi_axi_top_i.m_axi_arvalid
 top.vunit_spi_axi_top_2_tb.m_axi_rvalid
 @22
 #{top.vunit_spi_axi_top_2_tb.m_axi_araddr[31:0]} top.vunit_spi_axi_top_2_tb.m_axi_araddr[31] top.vunit_spi_axi_top_2_tb.m_axi_araddr[30] top.vunit_spi_axi_top_2_tb.m_axi_araddr[29] top.vunit_spi_axi_top_2_tb.m_axi_araddr[28] top.vunit_spi_axi_top_2_tb.m_axi_araddr[27] top.vunit_spi_axi_top_2_tb.m_axi_araddr[26] top.vunit_spi_axi_top_2_tb.m_axi_araddr[25] top.vunit_spi_axi_top_2_tb.m_axi_araddr[24] top.vunit_spi_axi_top_2_tb.m_axi_araddr[23] top.vunit_spi_axi_top_2_tb.m_axi_araddr[22] top.vunit_spi_axi_top_2_tb.m_axi_araddr[21] top.vunit_spi_axi_top_2_tb.m_axi_araddr[20] top.vunit_spi_axi_top_2_tb.m_axi_araddr[19] top.vunit_spi_axi_top_2_tb.m_axi_araddr[18] top.vunit_spi_axi_top_2_tb.m_axi_araddr[17] top.vunit_spi_axi_top_2_tb.m_axi_araddr[16] top.vunit_spi_axi_top_2_tb.m_axi_araddr[15] top.vunit_spi_axi_top_2_tb.m_axi_araddr[14] top.vunit_spi_axi_top_2_tb.m_axi_araddr[13] top.vunit_spi_axi_top_2_tb.m_axi_araddr[12] top.vunit_spi_axi_top_2_tb.m_axi_araddr[11] top.vunit_spi_axi_top_2_tb.m_axi_araddr[10] top.vunit_spi_axi_top_2_tb.m_axi_araddr[9] top.vunit_spi_axi_top_2_tb.m_axi_araddr[8] top.vunit_spi_axi_top_2_tb.m_axi_araddr[7] top.vunit_spi_axi_top_2_tb.m_axi_araddr[6] top.vunit_spi_axi_top_2_tb.m_axi_araddr[5] top.vunit_spi_axi_top_2_tb.m_axi_araddr[4] top.vunit_spi_axi_top_2_tb.m_axi_araddr[3] top.vunit_spi_axi_top_2_tb.m_axi_araddr[2] top.vunit_spi_axi_top_2_tb.m_axi_araddr[1] top.vunit_spi_axi_top_2_tb.m_axi_araddr[0]
@@ -53,5 +55,11 @@ top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_mq_u.spi_txen_o
 top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_mq_u.spi_rxen_i
 top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_mq_u.bus_write_o
 top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_mq_u.bus_done_i
+@420
+top.vunit_spi_axi_top_2_tb.spi_axi_top_i.axi_master_u.mst_exec_state
+@22
+#{top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[7:0]} top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[7] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[6] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[5] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[4] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[3] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[2] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[1] top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_slave_u.spi_txdata_i[0]
+@420
+top.vunit_spi_axi_top_2_tb.spi_axi_top_i.spi_mq_u.aux_cnt_s
 [pattern_trace] 1
 [pattern_trace] 0

@@ -26,4 +26,4 @@ architecture simulation of axis_s_spi_m_tb is
 
 begin
 
-end behavioral;
+end simulation;
