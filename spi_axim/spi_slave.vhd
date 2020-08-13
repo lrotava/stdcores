@@ -93,7 +93,7 @@ begin
     spck_s        <= mclk_i;
     spi_busy_o    <= busy_s;
     spi_rxdata_o  <= rxdata_s;
-    spi_rxen_o    <= rx_en;
+    spi_rxen_o    <= rxdata_en;
 
     sync_mosi_u : sync_r
       generic map (2)
@@ -142,6 +142,7 @@ end generate;
       rxdata_en <= '0';
       rxdata_s  <= (others=>'0');
     elsif spck_s = edge and spck_s'event then
+      rxdata_en <= '0';
       if spck_en = '1' then
         if rx_en = '1' then
           input_sr <= "0000000";
@@ -149,7 +150,6 @@ end generate;
           rxdata_en <= '1';
         else
           input_sr <= input_sr(5 downto 0) & mosi_i;
-          rxdata_en <= '0';
         end if;
       end if;
     end if;
