@@ -146,10 +146,10 @@ end generate;
       if spck_en = '1' then
         if rx_en = '1' then
           input_sr <= "0000000";
-          rxdata_s <= input_sr(6 downto 0) & mosi_i;
+          rxdata_s <= input_sr(6 downto 0) & mosi_s;
           rxdata_en <= '1';
         else
-          input_sr <= input_sr(5 downto 0) & mosi_i;
+          input_sr <= input_sr(5 downto 0) & mosi_s;
         end if;
       end if;
     end if;
