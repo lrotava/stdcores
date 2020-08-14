@@ -44,6 +44,7 @@ architecture behavioral of spi_slave is
 
   signal spck_s         : std_logic;
   signal spck_en        : std_logic;
+  signal spck_set       : std_logic;
   signal spcs_s         : std_logic;
   signal mosi_s         : std_logic;
 
@@ -108,10 +109,14 @@ begin
     edge_gen : if edge = '1' generate
       det_spck_u : det_up
         port map ('0',mclk_i,spck_sync_s,spck_en);
+      det_spckf_u : det_down
+        port map ('0',mclk_i,spck_sync_s,spck_set); -- output data
 
     else generate
       det_spck_u : det_down
         port map ('0',mclk_i,spck_sync_s,spck_en);
+      det_spckf_u : det_up
+        port map ('0',mclk_i,spck_sync_s,spck_set); -- output data
 
     end generate;
 
@@ -170,14 +175,31 @@ end generate;
     end if;
   end process;
 
+  txout_gen : if clock_mode = native generate
+  begin
   output_latch_s <= spi_txdata_i(7) when tx_en = '1' else output_sr(6);
   output_latch_p: process(all) --(spck_s, spcs_s, output_latch_s )
   begin
-    if spcs_i = '1' then
+    if spcs_s = '1' then
       miso_o  <= '1';
-    elsif spck_i = not edge then
+    elsif spck_s = not edge then
       miso_o <= output_latch_s;
     end if;
   end process;
+  else generate -- clock_mode = oversampled
+    output_latch_s <= spi_txdata_i(7) when tx_en = '1' else output_sr(6);
+    output_latch_p: process(spck_s,spcs_s)
+    begin
+      if spcs_s = '1' then
+        miso_o  <= '1';
+      elsif spck_s = edge and spck_s'event then
+        if (spck_set = '1') then
+          miso_o <= output_latch_s;
+        end if;
+      end if;
+    end process;
+
+  end generate;
+
 
 end behavioral;
