@@ -204,21 +204,17 @@ package spi_axim_pkg is
       );
     end component spi_irq_ctrl;
 
-		function edge_config (CPOL : std_logic; CPHA: std_logic; clk_mode : spi_clock_t) return std_logic;
+		function edge_config (CPOL : std_logic; CPHA: std_logic) return std_logic;
 
 end spi_axim_pkg;
 
 --a arquitetura
 package body spi_axim_pkg is
 
-	function edge_config (CPOL : std_logic; CPHA: std_logic; clk_mode : spi_clock_t) return std_logic is
+	function edge_config (CPOL : std_logic; CPHA: std_logic) return std_logic is
 		variable tmp : std_logic;
 	begin
-		if (clk_mode = native) then
-			tmp := CPOL xnor CPHA;
-		else
-			tmp := '1';
-		end if;
+		tmp := CPOL xnor CPHA;
 		
 		return tmp;
 		

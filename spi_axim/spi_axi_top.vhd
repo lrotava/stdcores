@@ -145,7 +145,7 @@ is begin
     end if;
 end function;
 
-  constant edge       : std_logic := edge_config(CPOL, CPHA, get_clock_mode(native_clock_mode));
+  constant edge       : std_logic := edge_config(CPOL, CPHA);
 begin
 
   spi_slave_u : spi_slave

@@ -42,6 +42,18 @@ end spi_slave;
 
 architecture behavioral of spi_slave is
 
+	function get_edge_clkin (edge : std_logic; clock_mode: spi_clock_t) return std_logic is
+		variable tmp : std_logic;
+	begin
+		if (clock_mode = native) then
+			tmp := edge;
+		else
+			tmp := '1';
+		end if;
+	end get_edge_clkin;
+	
+  constant edge_clkin_c : std_logic := get_edge_clkin(edge, clock_mode);
+
   signal spck_s         : std_logic;
   signal spck_en        : std_logic;
   signal spck_set       : std_logic;
@@ -130,7 +142,7 @@ end generate;
   begin
     if spcs_s = '1' then
       data_en <= "00000001";
-    elsif spck_s = edge and spck_s'event then
+    elsif spck_s = edge_clkin_c and spck_s'event then
       if spck_en = '1' then
         data_en <= data_en(6 downto 0) & data_en(7);
       end if;
@@ -146,7 +158,7 @@ end generate;
       input_sr  <= (others=>'0');
       rxdata_en <= '0';
       rxdata_s  <= (others=>'0');
-    elsif spck_s = edge and spck_s'event then
+    elsif spck_s = edge_clkin_c and spck_s'event then
       rxdata_en <= '0';
       if spck_en = '1' then
         if rx_en = '1' then
@@ -164,7 +176,7 @@ end generate;
   begin
     if spcs_s = '1' then
       output_sr(6 downto 0) <= "1111111";
-    elsif spck_s = edge and spck_s'event then
+    elsif spck_s = edge_clkin_c and spck_s'event then
       if spck_en = '1' then
         if tx_en = '1' then
           output_sr <= spi_txdata_i(6 downto 0);
@@ -182,7 +194,7 @@ end generate;
   begin
     if spcs_s = '1' then
       miso_o  <= '1';
-    elsif spck_s = not edge then
+    elsif spck_s = not edge_clkin_c then
       miso_o <= output_latch_s;
     end if;
   end process;
@@ -192,7 +204,7 @@ end generate;
     begin
       if spcs_s = '1' then
         miso_o  <= '1';
-      elsif spck_s = edge and spck_s'event then
+      elsif spck_s = edge_clkin_c and spck_s'event then
         if (spck_set = '1') then
           miso_o <= output_latch_s;
         end if;
