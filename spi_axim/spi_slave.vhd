@@ -50,6 +50,8 @@ architecture behavioral of spi_slave is
 		else
 			tmp := '1';
 		end if;
+		
+		return tmp;
 	end get_edge_clkin;
 	
   constant edge_clkin_c : std_logic := get_edge_clkin(edge, clock_mode);
