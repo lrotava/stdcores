@@ -83,7 +83,7 @@ architecture tb of vunit_spi_axi_top_2_tb is
     signal    M_AXI_RID     : std_logic_vector(ID_WIDTH-1 downto 0);
     signal    M_AXI_RLAST   : std_logic;
   
-    constant frequency_mhz   : real := 10.0000;
+    constant frequency_mhz   : real := 12.5000;
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
     constant spi_half_period : time := spi_period;
   
@@ -118,7 +118,7 @@ begin
     spi_axi_top_i : entity stdcores.spi_axi_top
         generic map (
             CPOL          => '0',
-            CPHA          => '0',
+            CPHA          => '1',
             ID_WIDTH      => ID_WIDTH,
             ID_VALUE      => ID_VALUE,
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
@@ -261,10 +261,10 @@ begin
             for k in 0 to length_i-1 loop
                 for j in 7 downto 0 loop
                     spcs_s <= '0';
-                    spck_s <= '0';
+                    spck_s <= '1';
                     mosi_s <= data_i(k)(j);
                     wait for spi_half_period;
-                    spck_s      <= '1';
+                    spck_s      <= '0';
                     data_rx_v(j) := miso_s;
                     wait for spi_half_period;
                 end loop;

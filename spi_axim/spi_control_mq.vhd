@@ -118,7 +118,7 @@ architecture behavioral of spi_control_mq is
       when FAST_WRITE_c  =>
         tmp := WRITE_c;
       when FAST_READ_c   =>
-        tmp := FAST_READ_c;
+        tmp := READ_c;
       when WRITE_BURST_c =>
         tmp := WRITE_c;
       when READ_BURST_c  =>
@@ -433,26 +433,6 @@ begin
 
             case temp_v is
 
-              when FAST_READ_c   =>
-                if (bus_done_v = '0') then
-	                bus_read_o <= '1';
-	                bus_addr_o <= addr_v;
-	
-	                if bus_done_i = '1' then
-	                    bus_done_v := '1';
-	                  bus_read_o <= '0';
-	                  buffer_v   := set_slice(buffer_v, bus_data_i, 0, lsb_first);
-	                end if;
-                end if; 
-                if (bus_done_v = '1') and ((first_spi_tx_v = '1') or (spi_rxen_i = '1')) then
-                  bus_done_v := '0';
-                  spi_txen_o <= '1';
-                  spi_txdata_o <= get_slice(buffer_v,8,buffer_size-1, lsb_first);
-                  spi_mq    <= next_state(command_v, aux_cnt, spi_busy_i, spi_mq);
-                else
-                  spi_txen_o <= '0';
-                end if;
-
               when READ_c        =>
                 if (bus_done_v = '0') then
                 bus_read_o <= '1';
@@ -460,7 +440,7 @@ begin
                 if bus_done_i = '1' then
                     bus_done_v := '1';
                   	bus_read_o <= '0';
-                    buffer_v     := set_slice(buffer_v, bus_data_i, 0, lsb_first);
+                    buffer_v := set_slice(buffer_v, bus_data_i, 0, lsb_first);
                   end if;
                 end if; 
                 if (bus_done_v = '1') and ((first_spi_tx_v = '1') or (spi_rxen_i = '1')) then

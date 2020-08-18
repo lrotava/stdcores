@@ -1,9 +1,7 @@
 -- This testbench simulates the AXI interface in a very simple way.
--- The write values are ignored and the read value is based on the address.
---     rdata := araddr(31 downto 16) & not araddr(15 downto 0);
+-- The write values are sequentially stored in a FIFO read value is will come from this FIFO.
 -- The tests are:
--- test_read - Reads some sequential words with the READ_C command
--- test_fast_read - Reads some sequential words with the FAST_READ_C command
+-- test_burst_write_read - Writes and reads from the same address (WRITE_BURST_c, READ_BURST_c)
 
 
 
@@ -17,6 +15,7 @@ use std.textio.all;
 --
 library stdblocks;
 library stdcores;
+    use stdcores.spi_axim_pkg.all;
 library expert;
     use expert.std_logic_expert.all;
 
@@ -30,14 +29,14 @@ library vunit_lib;
 context vunit_lib.vunit_context;
 context vunit_lib.vc_context;
 
-entity vunit_spi_axi_top_tb is
+entity vunit_spi_axi_top_3_tb is
     --vunit
     generic (
         runner_cfg : string
     );
 end;
 
-architecture tb of vunit_spi_axi_top_tb is
+architecture tb of vunit_spi_axi_top_3_tb is
 
     constant  ID_WIDTH      : integer := 1;
     constant  ID_VALUE      : integer := 0;
@@ -89,32 +88,11 @@ architecture tb of vunit_spi_axi_top_tb is
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
     constant spi_half_period : time := spi_period;
   
+  
+    type axi_mem_t is array (NATURAL RANGE <>) of std_logic_vector(M_AXI_WDATA'range);
+    signal axi_memory_s    : axi_mem_t(4095 downto 0);
+
     type data_vector_t is array (NATURAL RANGE <>) of std_logic_vector(7 downto 0);
-    signal RDSN_c        : data_vector_t(4 downto 0) := (x"C3", others => x"00");
-    signal WRSN_c        : data_vector_t(4 downto 0) := (x"C2", x"89", x"AB", x"CD", x"EF" );
-  
-    signal IRQRD_c       : data_vector_t(1 downto 0) := (x"A2", x"00");
-    signal IRQWR_c       : data_vector_t(1 downto 0) := (x"A3", x"0F");
-    signal IRQMRD_c      : data_vector_t(1 downto 0) := (x"D2", x"00");
-    signal IRQMWR_c      : data_vector_t(1 downto 0) := (x"D3", x"F0");
-  
-    signal WRITE_c       : std_logic_vector(7 downto 0) := x"02";
-    signal READ_c        : std_logic_vector(7 downto 0) := x"03";
-    signal FAST_WRITE_c  : std_logic_vector(7 downto 0) := x"0A";
-    signal FAST_READ_c   : std_logic_vector(7 downto 0) := x"0B";
-    signal WRITE_BURST_c : std_logic_vector(7 downto 0) := x"42";
-    signal READ_BURST_c  : std_logic_vector(7 downto 0) := x"4B";
-    signal EDIO_c        : std_logic_vector(7 downto 0) := x"3B";
-    signal EQIO_c        : std_logic_vector(7 downto 0) := x"38";
-    signal RSTIO_c       : std_logic_vector(7 downto 0) := x"FF";
-    signal RDMR_c        : std_logic_vector(7 downto 0) := x"05";
-    signal WRMR_c        : std_logic_vector(7 downto 0) := x"01";
-    signal DPD_c         : std_logic_vector(7 downto 0) := x"BA";
-    signal HBN_c         : std_logic_vector(7 downto 0) := x"B9";
-    signal STAT_c        : std_logic_vector(7 downto 0) := x"A5";
-    signal RDID_c        : std_logic_vector(7 downto 0) := x"9F";
-    signal RUID_c        : std_logic_vector(7 downto 0) := x"4C";
-  
     signal spi_txdata_s    : data_vector_t(63 downto 0);
     signal spi_rxdata_s    : data_vector_t(63 downto 0);
     signal spi_rxdata_en   : std_logic;
@@ -175,14 +153,53 @@ begin
             M_AXI_RLAST   => M_AXI_RLAST
         );
 
+    axi_wr_sim_p : process
+        variable waddr_aux_v : std_logic_vector(M_AXI_AWADDR'range); 
+        variable wdata_aux_v : std_logic_vector(M_AXI_WDATA'range); 
+        variable waddr_ready_v : std_logic := '0';
+        variable wdata_ready_v : std_logic := '0';
+        variable address : integer := 0;
+    begin
+        M_AXI_AWREADY <= '1';
+        M_AXI_WREADY  <= '1';
+        M_AXI_BVALID  <= '0';
+
+        wait until rising_edge(M_AXI_AWVALID) or rising_edge(M_AXI_WVALID);
+
+        if (M_AXI_AWVALID = '1') then
+            waddr_aux_v := M_AXI_AWADDR;
+            waddr_ready_v := '1';
+            -- M_AXI_AWREADY <= '0' transport after 2*10 ns;
+        end if;
+        if (M_AXI_WVALID = '1') then
+            wdata_aux_v := M_AXI_WDATA;
+            wdata_ready_v := '1';
+            -- M_AXI_WREADY <= '0' transport after 2*10 ns;
+        end if;
+
+        if (wdata_ready_v = '1' and waddr_ready_v = '1') then
+            axi_memory_s(address) <= wdata_aux_v;
+            address := address + 1;
+
+            wait for 0*2*10 ns;
+            M_AXI_BVALID  <= '1';
+            wait for 2*10 ns;
+            while (M_AXI_BREADY = '0') loop
+                wait for 2*10 ns;
+            end loop;
+            M_AXI_BVALID  <= '0';
+        end if;
+    end process;
     axi_rd_sim_p : process
-        variable rdata_aux_v : std_logic_vector(M_AXI_RDATA'range); 
+        variable rdata_aux_v : std_logic_vector(M_AXI_RDATA'range);
+        variable address : integer := 0;
     begin
         M_AXI_ARREADY <= '1';
         M_AXI_RVALID  <= '0';
 
         wait until rising_edge(M_AXI_ARVALID);
-        rdata_aux_v := M_AXI_ARADDR(31 downto 16) & not M_AXI_ARADDR(15 downto 0);
+        rdata_aux_v := axi_memory_s(address);
+        address := address + 1;
         wait for 2*10 ns;
         M_AXI_ARREADY <= '0';
 
@@ -256,21 +273,22 @@ begin
 
             wait for 2*spi_half_period;
         end procedure;
-
+        
         procedure spi_check_read (
             command_i : in std_logic_vector(7 downto 0);
-            address_i : in std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
+            signal data_wr  : in  data_vector_t;
             signal data_rd  : in  data_vector_t;
             length_i : in integer
         ) is
-            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
-            variable address2_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
             variable expected_value_v : std_logic_vector(7 downto 0);
+            variable rd_byte_idx_v : integer;
             variable byte_idx_v : integer;
+            variable fast_read_offset_v : integer;
             variable data_length_v : integer;
         begin
             data_length_v := length_i-5;
             byte_idx_v := 5; -- Skips command and address
+            fast_read_offset_v := 0;
             -- check ACK byte when needed
             if (command_i = FAST_READ_c) then
                 expected_value_v := x"AC";
@@ -278,77 +296,48 @@ begin
                 
                 byte_idx_v := byte_idx_v + 1;
                 data_length_v := data_length_v - 1;
+                fast_read_offset_v := 1;
             end if;
-
+            
             -- check data byte(s)
-            for i in 0 to (data_length_v/ADDR_BYTE_NUM)-1 loop
-                address2_v := address_i + (i*ADDR_BYTE_NUM);
-                address_v := address2_v(31 downto 16) & not address2_v(15 downto 0);
-                for j in ADDR_BYTE_NUM-1 downto 0 loop
-                    info("Byte " & to_string(byte_idx_v));
-                    expected_value_v := address_v((j+1)*8-1 downto j*8);
-                    check_equal(data_rd(byte_idx_v), expected_value_v, "Testing data byte");
+            for i in 0 to data_length_v-1 loop
+                info("Byte " & to_string(byte_idx_v));
+                expected_value_v := data_wr(byte_idx_v);
+                check_equal(data_rd(byte_idx_v), expected_value_v, "Testing data byte");
 
-                    byte_idx_v := byte_idx_v + 1;
+                byte_idx_v := byte_idx_v + 1;
+            end loop;                                 
+        end procedure;
+
+        procedure test_burst_write is
+            constant num_words_c : integer := 3;
+            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
+        begin
+            address_v := x"0000_0000";
+            
+            spi_txdata_s(0) <= WRITE_BURST_c;
+            for i in 1 downto ADDR_BYTE_NUM loop
+                spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
+            end loop;
+                
+            for j in 1 to num_words_c loop
+                for i in ADDR_BYTE_NUM+1 to ADDR_BYTE_NUM+1+4 loop
+                    spi_txdata_s(i) <= to_std_logic_vector(i*j, 8);
                 end loop;
-            end loop;
-                                               
-        end procedure;
 
-        procedure test_read is
-            constant num_words_c : integer := 3;
-            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
-        begin
-            address_v := x"0000_0000";
-            
-            spi_txdata_s(0) <= READ_c;
-            for i in 1 downto ADDR_BYTE_NUM loop
-                spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
+                wait for 100 ns;
+                -- fast write - n words
+                -- fast write and write are the same 
+                spi_bus(spi_txdata_s, spi_rxdata_s, DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
             end loop;
 
-            wait for 100 ns;
-
-            -- not fast read - n words
-            spi_bus(spi_txdata_s, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
-
-            spi_check_read(READ_c, address_v, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
-        end procedure;
-
-        procedure test_fast_read is
-            constant num_words_c : integer := 3;
-            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
-        begin
-            address_v := x"0000_0000";
-            
-            spi_txdata_s(0) <= FAST_READ_c;
-            for i in 1 downto ADDR_BYTE_NUM loop
-                spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
+            wait for 1000 ns;
+            -- now read the content of the memory
+            spi_txdata_s(0) <= READ_BURST_c;
+            for j in 1 to num_words_c loop
+                spi_bus(spi_txdata_s, spi_rxdata_s, DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
+                spi_check_read(READ_BURST_c, spi_txdata_s, spi_rxdata_s, DATA_BYTE_NUM + ADDR_BYTE_NUM + 1);
             end loop;
-
-            wait for 100 ns;
-
-            -- fast read - 1 word + 1 ack byte 
-            spi_bus(spi_txdata_s, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 2);
-
-            spi_check_read(FAST_READ_c, address_v, spi_rxdata_s, num_words_c*DATA_BYTE_NUM + ADDR_BYTE_NUM + 2);
-        end procedure;
-
-        procedure test_read_id is
-            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
-            variable expected_value_v : std_logic_vector(7 downto 0);
-        begin
-            spi_txdata_s(0) <= RDID_c;
-
-            wait for 100 ns;
-
-            -- 1 word
-            spi_bus(spi_txdata_s, spi_rxdata_s, DATA_BYTE_NUM + 1);
-            
-            for i in 0 to 3 loop
-                expected_value_v := DID_i((i+1)*8-1 downto i*8);
-                check_equal(spi_rxdata_s(4-i), expected_value_v, "Testing ID bytes");
-            end loop;
-
         end procedure;
 
     begin
@@ -360,32 +349,13 @@ begin
             if run("Sanity.check") then
                 test_runner_cleanup(runner);
 
-            elsif run("read.something") then
-                info("Reads something from SPI");
+            elsif run("burst.something") then
+                info("Writes and reads something to/from SPI");
                 wait for 100 ns;
-                test_read;
+                test_burst_write;
                 wait for 1000 ns;
-                test_read;
+                test_burst_write;
                 wait for 100 ns;
-
-                test_runner_cleanup(runner);
-
-            elsif run("fast.read.something") then
-                info("Reads something from SPI");
-                wait for 100 ns;
-                test_fast_read;
-                wait for 1000 ns;
-                test_fast_read;
-                wait for 100 ns;
-
-                test_runner_cleanup(runner);
-
-            elsif run("read.id") then
-                info("Reads ID from SPI");
-                wait for 100 ns;
-                test_read_id;
-                wait for 10 ns;
-                test_read_id;
 
                 test_runner_cleanup(runner);
             end if;
