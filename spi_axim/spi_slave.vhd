@@ -189,31 +189,14 @@ end generate;
     end if;
   end process;
 
-  txout_gen : if clock_mode = native generate
-  begin
   output_latch_s <= spi_txdata_i(7) when tx_en = '1' else output_sr(6);
   output_latch_p: process(all) --(spck_s, spcs_s, output_latch_s )
   begin
-    if spcs_s = '1' then
+    if spcs_i = '1' then
       miso_o  <= '1';
-    elsif spck_s = not edge_clkin_c then
+    elsif spck_i = not edge then
       miso_o <= output_latch_s;
     end if;
   end process;
-  else generate -- clock_mode = oversampled
-    output_latch_s <= spi_txdata_i(7) when tx_en = '1' else output_sr(6);
-    output_latch_p: process(spck_s,spcs_s)
-    begin
-      if spcs_s = '1' then
-        miso_o  <= '1';
-      elsif spck_s = edge_clkin_c and spck_s'event then
-        if (spck_set = '1') then
-          miso_o <= output_latch_s;
-        end if;
-      end if;
-    end process;
-
-  end generate;
-
 
 end behavioral;
