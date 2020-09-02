@@ -58,7 +58,6 @@ architecture behavioral of spi_slave is
 
   signal spck_s         : std_logic;
   signal spck_en        : std_logic;
-  signal spck_set       : std_logic;
   signal spcs_s         : std_logic;
   signal mosi_s         : std_logic;
 
@@ -123,14 +122,10 @@ begin
     edge_gen : if edge = '1' generate
       det_spck_u : det_up
         port map ('0',mclk_i,spck_sync_s,spck_en);
-      det_spckf_u : det_down
-        port map ('0',mclk_i,spck_sync_s,spck_set); -- output data
 
     else generate
       det_spck_u : det_down
         port map ('0',mclk_i,spck_sync_s,spck_en);
-      det_spckf_u : det_up
-        port map ('0',mclk_i,spck_sync_s,spck_set); -- output data
 
     end generate;
 
