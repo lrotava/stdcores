@@ -1,12 +1,17 @@
-----------------------------------------------------------------------------------------------------------
--- SPI-AXI-Controller Machine.
--- Ricardo Tafas
--- This is open source code licensed under LGPL.
--- By using it on your system you agree with all LGPL conditions.
--- This code is provided AS IS, without any sort of warranty.
--- Author: Ricardo F Tafas Jr
--- 2019
----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
+----------------------------------------------------------------------------------
 library IEEE;
 	use IEEE.std_logic_1164.all;
 	use IEEE.numeric_std.all;
@@ -38,15 +43,16 @@ package spi_axim_pkg is
 
 	type spi_clock_t is (native, oversampled);
 
-	component spi_axi_top
+    component spi_axi_top
     generic (
-			CPOL          : std_logic := '0';
-			CPHA          : std_logic := '0';
-      ID_WIDTH      : integer   := 1;
-      ID_VALUE      : integer   := 0;
-      ADDR_BYTE_NUM : integer   := 4;
-      DATA_BYTE_NUM : integer   := 4;
-      serial_num_rw : boolean   := true
+      CPOL          : std_logic   := '0';
+      CPHA          : std_logic   := '0';
+      ID_WIDTH      : integer     := 1;
+      ID_VALUE      : integer     := 0;
+      ADDR_BYTE_NUM : integer     := 4;
+      DATA_BYTE_NUM : integer     := 4;
+      serial_num_rw : boolean     := true;
+      clock_mode    : spi_clock_t := native
       );
     port (
       --general
@@ -212,12 +218,8 @@ end spi_axim_pkg;
 package body spi_axim_pkg is
 
 	function edge_config (CPOL : std_logic; CPHA: std_logic) return std_logic is
-		variable tmp : std_logic;
 	begin
-		tmp := CPOL xnor CPHA;
-		
-		return tmp;
-		
+		return CPOL xnor CPHA;
 	end edge_config;
 
 end spi_axim_pkg;

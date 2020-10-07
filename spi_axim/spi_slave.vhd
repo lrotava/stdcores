@@ -1,12 +1,17 @@
-----------------------------------------------------------------------------------------------------------
--- SPI-AXI-Controller Machine.
--- Ricardo Tafas
--- This is open source code licensed under LGPL.
--- By using it on your system you agree with all LGPL conditions.
--- This code is provided AS IS, without any sort of warranty.
--- Author: Ricardo F Tafas Jr
--- 2019
----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
+----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
@@ -42,20 +47,7 @@ end spi_slave;
 
 architecture behavioral of spi_slave is
 
-	function get_edge_clkin (edge : std_logic; clock_mode: spi_clock_t) return std_logic is
-		variable tmp : std_logic;
-	begin
-		if (clock_mode = native) then
-			tmp := edge;
-		else
-			tmp := '1';
-		end if;
-		
-		return tmp;
-	end get_edge_clkin;
-	
-  constant edge_clkin_c : std_logic := get_edge_clkin(edge, clock_mode);
-
+  signal edge_s         : std_logic;
   signal spck_s         : std_logic;
   signal spck_en        : std_logic;
   signal spcs_s         : std_logic;
@@ -79,6 +71,7 @@ begin
     signal spi_rxdata_s : std_logic_vector(7 downto 0) := "11111111";
     signal rxdata_en_s  : std_logic;
   begin
+    edge_s  <= edge;
     spck_en <= '1';
     spck_s  <= spck_i;
     spcs_s  <= spcs_i;
@@ -104,10 +97,12 @@ begin
   else generate
     signal spck_sync_s : std_logic;
   begin
+    edge_s        <= '1';
     spck_s        <= mclk_i;
     spi_busy_o    <= busy_s;
     spi_rxdata_o  <= rxdata_s;
-    spi_rxen_o    <= rxdata_en;
+    det_rxen_u : det_up
+      port map ('0',mclk_i,rxdata_en,spi_rxen_o);
 
     sync_mosi_u : sync_r
       generic map (2)
@@ -139,7 +134,7 @@ end generate;
   begin
     if spcs_s = '1' then
       data_en <= "00000001";
-    elsif spck_s = edge_clkin_c and spck_s'event then
+    elsif spck_s = edge_s and spck_s'event then
       if spck_en = '1' then
         data_en <= data_en(6 downto 0) & data_en(7);
       end if;
@@ -155,8 +150,7 @@ end generate;
       input_sr  <= (others=>'0');
       rxdata_en <= '0';
       rxdata_s  <= (others=>'0');
-    elsif spck_s = edge_clkin_c and spck_s'event then
-      rxdata_en <= '0';
+    elsif spck_s = edge_s and spck_s'event then
       if spck_en = '1' then
         if rx_en = '1' then
           input_sr <= "0000000";
@@ -164,6 +158,7 @@ end generate;
           rxdata_en <= '1';
         else
           input_sr <= input_sr(5 downto 0) & mosi_s;
+          rxdata_en <= '0';
         end if;
       end if;
     end if;
@@ -173,7 +168,7 @@ end generate;
   begin
     if spcs_s = '1' then
       output_sr(6 downto 0) <= "1111111";
-    elsif spck_s = edge_clkin_c and spck_s'event then
+    elsif spck_s = edge_s and spck_s'event then
       if spck_en = '1' then
         if tx_en = '1' then
           output_sr <= spi_txdata_i(6 downto 0);
@@ -189,7 +184,7 @@ end generate;
   begin
     if spcs_i = '1' then
       miso_o  <= '1';
-    elsif spck_i = not edge then
+    elsif spck_i = not edge_s then
       miso_o <= output_latch_s;
     end if;
   end process;

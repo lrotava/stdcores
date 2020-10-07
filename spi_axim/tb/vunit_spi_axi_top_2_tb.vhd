@@ -83,7 +83,7 @@ architecture tb of vunit_spi_axi_top_2_tb is
     signal    M_AXI_RID     : std_logic_vector(ID_WIDTH-1 downto 0);
     signal    M_AXI_RLAST   : std_logic;
   
-    constant frequency_mhz   : real := 12.5000;
+    constant frequency_mhz   : real := 25.000;
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
     constant spi_half_period : time := spi_period;
   
@@ -209,13 +209,13 @@ begin
 
         wait until rising_edge(M_AXI_ARVALID);
         rdata_aux_v := axi_memory_s(to_integer(M_AXI_ARADDR(M_AXI_ARADDR'high downto 2)));
-        wait for 2*10 ns;
+        wait for 1*10 ns;
         M_AXI_ARREADY <= '0';
 
         wait for 0*2*10 ns;
         M_AXI_RVALID  <= '1';
         M_AXI_RDATA   <= rdata_aux_v;
-        wait for 2*10 ns;
+        wait for 1*10 ns;
         while (M_AXI_RREADY = '0') loop
             wait for 2*10 ns;
         end loop;

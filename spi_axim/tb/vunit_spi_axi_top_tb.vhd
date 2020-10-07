@@ -85,7 +85,7 @@ architecture tb of vunit_spi_axi_top_tb is
     signal    M_AXI_RID     : std_logic_vector(ID_WIDTH-1 downto 0);
     signal    M_AXI_RLAST   : std_logic;
   
-    constant frequency_mhz   : real := 10.00;
+    constant frequency_mhz   : real := 25.00;
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
     constant spi_half_period : time := spi_period;
   
@@ -133,7 +133,7 @@ begin
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
             serial_num_rw => serial_num_rw,
-            native_clock_mode => false
+            native_clock_mode => true
         )
         port map (
             rst_i         => rst_i,
@@ -236,7 +236,7 @@ begin
             variable data_rx_v : std_logic_vector(7 downto 0);
         begin
             spcs_s <= '0';
-            wait for 30 ns;
+            wait for 300 ns;
             for k in 0 to length_i-1 loop
                 for j in 7 downto 0 loop
                     spck_s <= '1';
