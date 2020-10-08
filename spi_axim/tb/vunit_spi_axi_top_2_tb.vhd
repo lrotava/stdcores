@@ -260,8 +260,8 @@ begin
             address_v := x"0000_0010";
             
             spi_txdata_s(0) <= WRITE_c;
-            for i in 1 downto ADDR_BYTE_NUM loop
-                spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
+            for i in ADDR_BYTE_NUM downto 1 loop
+                spi_txdata_s(ADDR_BYTE_NUM-i+1) <= address_v(i*8-1 downto (i-1)*8);
             end loop;
             
             for i in ADDR_BYTE_NUM+1 to ADDR_BYTE_NUM+num_words_c*DATA_BYTE_NUM loop
@@ -284,11 +284,11 @@ begin
             constant num_words_c : integer := 3;
             variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
         begin
-            address_v := x"0000_0000";
+            address_v := x"0000_0008";
             
             spi_txdata_s(0) <= FAST_WRITE_c;
-            for i in 1 downto ADDR_BYTE_NUM loop
-                spi_txdata_s(i) <= address_v((i+1)*8-1 downto i*8);
+            for i in ADDR_BYTE_NUM downto 1 loop
+                spi_txdata_s(ADDR_BYTE_NUM-i+1) <= address_v(i*8-1 downto (i-1)*8);
             end loop;
 
             spi_txdata_s(ADDR_BYTE_NUM+1) <= x"AC";
