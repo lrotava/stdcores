@@ -56,6 +56,18 @@ run_src_lib.add_source_files("../../../stdcores/*/*.vhd", allow_empty=False)
 run_src_lib = ui.add_library("expert")
 run_src_lib.add_source_files("../../../stdexpert/src/*.vhd", allow_empty=False)
 
+run_avl_utils_lib = ui.add_library("avl_utils_lib")
+run_avl_utils_lib.add_source_files("../../../avl_packages/src/*.vhd", allow_empty=True)
+run_avl_utils_lib.add_source_files("../../../stdexpert/src/*.vhd", allow_empty=False)
+run_avl_utils_lib.add_source_files("../../../avl_clock_utils/src/*_pkg.vhd", allow_empty=False)
+
+
+run_src_lib2 = ui.add_library("src_lib")
+run_src_lib2.add_source_files("../../../avl_clock_utils/src/*.vhd", allow_empty=False)
+
+
+run_avl_sim_lib = ui.add_library("avl_sim_lib")
+run_avl_sim_lib.add_source_files("../../../avl_simulators/src/*.vhd", allow_empty=True)
 
 #Add tb sources.
 run_tb_lib = ui.add_library("tb_lib")
@@ -67,9 +79,9 @@ run_tb_lib.add_source_files("*.vhd")
 
 #GHDL parameters.
 if(code_coverage==True):
-  run_src_lib.add_compile_option   ("ghdl.flags"     , [  "-fprofile-arcs","-ftest-coverage" ])
-  run_tb_lib.add_compile_option("ghdl.flags"     , [  "-fprofile-arcs","-ftest-coverage" ])
-  ui.set_sim_option("ghdl.elab_flags"      , [ "-Wl,-lgcov" ])
+  run_src_lib.add_compile_option("ghdl.flags", [  "-fprofile-arcs","-ftest-coverage" ])
+  run_tb_lib.add_compile_option("ghdl.flags", [ "-fprofile-arcs","-ftest-coverage" ])
+  ui.set_sim_option("ghdl.elab_flags", [ "-Wl,-lgcov","-Wl,--coverage" ])
   ui.set_sim_option("modelsim.init_files.after_load" ,["modelsim.do"])
 else:
   ui.set_sim_option("modelsim.init_files.after_load" ,["modelsim.do"])
@@ -84,10 +96,16 @@ except SystemExit as exc:
 #Code coverage.
 if all_ok:
   if(code_coverage==True):
-    subprocess.call(["lcov", "--capture", "--directory", "avl_parallel2bram_top.gcda", "--output-file",  "code_0.info" ])
-    subprocess.call(["lcov", "--capture", "--directory", "sync_input.gcda", "--output-file",  "code_1.info" ])
-    subprocess.call(["genhtml","code_0.info","code_1.info","--output-directory", "html"])
+    subprocess.run(["lcov", "--capture", "--directory", ".", "--output-file",  "code_coverage.info" ])
+    subprocess.run(["genhtml","code_coverage.info","--output-directory", "cc_html"])
+    
+    # Remove all the code coverage intermediate files
+    subprocess.run('rm *.gcno *.gcda code_coverage.info', shell=True)
   else:
+    # Remove all the code coverage intermediate files
+    subprocess.run('rm *.gcno *.gcda code_coverage.info', shell=True)
     exit(0)
 else:
+  # Remove all the code coverage intermediate files
+  subprocess.run('rm *.gcno *.gcda code_coverage.info', shell=True)
   exit(1)

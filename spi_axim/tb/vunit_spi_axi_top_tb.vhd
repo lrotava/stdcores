@@ -18,7 +18,15 @@ use std.textio.all;
 library stdblocks;
 library stdcores;
 library expert;
-    use expert.std_logic_expert.all;
+use expert.std_logic_expert.all;
+
+library avl_utils_lib;
+use avl_utils_lib.axi_pkg.all;
+use avl_utils_lib.axil_pkg.all;
+use avl_utils_lib.avl_clock_utils_pkg.all;
+
+library avl_sim_lib;
+use avl_sim_lib.avl_simulators_pkg.all;
 
 library tb_lib;
 
@@ -59,35 +67,12 @@ architecture tb of vunit_spi_axi_top_tb is
     signal    irq_i         : std_logic_vector(7 downto 0)                 := x"86";
     signal    irq_o         : std_logic;
   
-    signal    M_AXI_AWID    : std_logic_vector(ID_WIDTH-1 downto 0);
-    signal    M_AXI_AWVALID : std_logic;
-    signal    M_AXI_AWREADY : std_logic;
-    signal    M_AXI_AWADDR  : std_logic_vector(8*ADDR_BYTE_NUM-1 downto 0);
-    signal    M_AXI_AWPROT  : std_logic_vector(2 downto 0);
-    signal    M_AXI_WVALID  : std_logic;
-    signal    M_AXI_WREADY  : std_logic;
-    signal    M_AXI_WDATA   : std_logic_vector(8*DATA_BYTE_NUM-1 downto 0);
-    signal    M_AXI_WSTRB   : std_logic_vector(DATA_BYTE_NUM-1 downto 0);
-    signal    M_AXI_WLAST   : std_logic;
-    signal    M_AXI_BVALID  : std_logic;
-    signal    M_AXI_BREADY  : std_logic;
-    signal    M_AXI_BRESP   : std_logic_vector(1 downto 0);
-    signal    M_AXI_BID     : std_logic_vector(ID_WIDTH-1 downto 0);
-    signal    M_AXI_ARVALID : std_logic;
-    signal    M_AXI_ARREADY : std_logic;
-    signal    M_AXI_ARADDR  : std_logic_vector(8*ADDR_BYTE_NUM-1 downto 0);
-    signal    M_AXI_ARPROT  : std_logic_vector(2 downto 0);
-    signal    M_AXI_ARID    : std_logic_vector(ID_WIDTH-1 downto 0);
-    signal    M_AXI_RVALID  : std_logic;
-    signal    M_AXI_RREADY  : std_logic;
-    signal    M_AXI_RDATA   : std_logic_vector(8*DATA_BYTE_NUM-1 downto 0);
-    signal    M_AXI_RRESP   : std_logic_vector(1 downto 0);
-    signal    M_AXI_RID     : std_logic_vector(ID_WIDTH-1 downto 0);
-    signal    M_AXI_RLAST   : std_logic;
+    signal axilm_m2s : axil_m2s_t;
+    signal axilm_s2m : axil_s2m_t;
   
-    constant frequency_mhz   : real := 25.00;
+    constant frequency_mhz   : real := 12.00;
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
-    constant spi_half_period : time := spi_period;
+    constant spi_half_period : time := spi_period/2;
   
     type data_vector_t is array (NATURAL RANGE <>) of std_logic_vector(7 downto 0);
     signal RDSN_c        : data_vector_t(4 downto 0) := (x"C3", others => x"00");
@@ -121,7 +106,7 @@ architecture tb of vunit_spi_axi_top_tb is
   
 begin
     --clock and reset
-    mclk_i <= not mclk_i after 10 ns;
+    clk_gen(mclk_i, 10 ns);
     rst_i  <= '1', '0' after 30 ns;
 
     spi_axi_top_i : entity stdcores.spi_axi_top
@@ -148,64 +133,51 @@ begin
             serial_num_i  => serial_num_i,
             irq_i         => irq_i,
             irq_o         => irq_o,
-            M_AXI_AWID    => M_AXI_AWID,
-            M_AXI_AWVALID => M_AXI_AWVALID,
-            M_AXI_AWREADY => M_AXI_AWREADY,
-            M_AXI_AWADDR  => M_AXI_AWADDR,
-            M_AXI_AWPROT  => M_AXI_AWPROT,
-            M_AXI_WVALID  => M_AXI_WVALID,
-            M_AXI_WREADY  => M_AXI_WREADY,
-            M_AXI_WDATA   => M_AXI_WDATA,
-            M_AXI_WSTRB   => M_AXI_WSTRB,
-            M_AXI_WLAST   => M_AXI_WLAST,
-            M_AXI_BVALID  => M_AXI_BVALID,
-            M_AXI_BREADY  => M_AXI_BREADY,
-            M_AXI_BRESP   => M_AXI_BRESP,
-            M_AXI_BID     => M_AXI_BID,
-            M_AXI_ARVALID => M_AXI_ARVALID,
-            M_AXI_ARREADY => M_AXI_ARREADY,
-            M_AXI_ARADDR  => M_AXI_ARADDR,
-            M_AXI_ARPROT  => M_AXI_ARPROT,
-            M_AXI_ARID    => M_AXI_ARID,
-            M_AXI_RVALID  => M_AXI_RVALID,
-            M_AXI_RREADY  => M_AXI_RREADY,
-            M_AXI_RDATA   => M_AXI_RDATA,
-            M_AXI_RRESP   => M_AXI_RRESP,
-            M_AXI_RID     => M_AXI_RID,
-            M_AXI_RLAST   => M_AXI_RLAST
+            M_AXI_AWID    => open,--axilm_m2s.awid,
+            M_AXI_AWVALID => axilm_m2s.awvalid,
+            M_AXI_AWREADY => axilm_s2m.awready,
+            M_AXI_AWADDR  => axilm_m2s.awaddr,
+            M_AXI_AWPROT  => open,--axilm_s2m.awprot,
+            M_AXI_WVALID  => axilm_m2s.wvalid,
+            M_AXI_WREADY  => axilm_s2m.wready,
+            M_AXI_WDATA   => axilm_m2s.wdata,
+            M_AXI_WSTRB   => axilm_m2s.wstrb,
+            M_AXI_WLAST   => open,--axilm_m2s.wlast,
+            M_AXI_BVALID  => axilm_s2m.bvalid,
+            M_AXI_BREADY  => axilm_m2s.bready,
+            M_AXI_BRESP   => axilm_s2m.bresp,
+            M_AXI_BID     => (others=>'0'),--axilm_m2s.bid,
+            M_AXI_ARVALID => axilm_m2s.arvalid,
+            M_AXI_ARREADY => axilm_s2m.arready,
+            M_AXI_ARADDR  => axilm_m2s.araddr,
+            M_AXI_ARPROT  => open,--axilm_m2s.arprot,
+            M_AXI_ARID    => open,--axilm_m2s.arid,
+            M_AXI_RVALID  => axilm_s2m.rvalid,
+            M_AXI_RREADY  => axilm_m2s.rready,
+            M_AXI_RDATA   => axilm_s2m.rdata,
+            M_AXI_RRESP   => axilm_s2m.rresp,
+            M_AXI_RID     => (others=>'0'),--axilm_m2s.rid,
+            M_AXI_RLAST   => '0'--axilm_m2s.rlast
         );
-
-    axi_rd_sim_p : process
-        variable rdata_aux_v : std_logic_vector(M_AXI_RDATA'range); 
-    begin
-        M_AXI_ARREADY <= '1';
-        M_AXI_RVALID  <= '0';
-
-        wait until rising_edge(M_AXI_ARVALID);
-        rdata_aux_v := M_AXI_ARADDR(31 downto 16) & not M_AXI_ARADDR(15 downto 0);
-        wait for 2*10 ns;
-        M_AXI_ARREADY <= '0';
-
-        wait for 0*2*10 ns;
-        M_AXI_RVALID  <= '1';
-        M_AXI_RDATA   <= rdata_aux_v;
-        wait for 2*10 ns;
-        while (M_AXI_RREADY = '0') loop
-            wait for 2*10 ns;
-        end loop;
-        M_AXI_RVALID  <= '0';
-        M_AXI_RDATA   <= x"UUUUUUUU";
-
-    end process;
-
-    M_AXI_AWREADY <= '1';
-    M_AXI_WREADY  <= '1';
-    M_AXI_BVALID  <= '1';
-    M_AXI_BRESP   <= "00";
-    M_AXI_BID     <= (others=>'0');
-    M_AXI_RRESP   <= "00";
-    M_AXI_RID     <= (others=>'0');
-    M_AXI_RLAST   <= '0';
+        
+        avl_axils_sim_inst: entity avl_sim_lib.avl_axils_sim
+            generic map (
+                memory_length_g => 256,
+                memory_width_g => 32,
+        
+                awready_delay_g => 0,
+                wready_delay_g => 0,
+                bvalid_delay_g => 0,
+                arready_delay_g => 0,
+                rvalid_delay_g => 0
+            )
+            port map (
+                clk_i => mclk_i,
+                rstn_i => not rst_i,
+        
+                axilm_m2s_i => axilm_m2s,
+                axilm_s2m_o => axilm_s2m
+            );
 
 
     main : process
@@ -264,7 +236,6 @@ begin
             length_i : in integer
         ) is
             variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
-            variable address2_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
             variable expected_value_v : std_logic_vector(7 downto 0);
             variable byte_idx_v : integer;
             variable data_length_v : integer;
@@ -282,8 +253,7 @@ begin
 
             -- check data byte(s)
             for i in 0 to (data_length_v/ADDR_BYTE_NUM)-1 loop
-                address2_v := address_i + (i*ADDR_BYTE_NUM);
-                address_v := address2_v(31 downto 16) & not address2_v(15 downto 0);
+                address_v := address_i + (i*ADDR_BYTE_NUM);
                 for j in ADDR_BYTE_NUM-1 downto 0 loop
                     info("Byte " & to_string(byte_idx_v));
                     expected_value_v := address_v((j+1)*8-1 downto j*8);
