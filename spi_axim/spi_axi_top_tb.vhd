@@ -1,12 +1,17 @@
-----------------------------------------------------------------------------------------------------------
--- SPI-AXI-Controller Machine.
--- Ricardo Tafas
--- This is open source code licensed under LGPL.
--- By using it on your system you agree with all LGPL conditions.
--- This code is provided AS IS, without any sort of warranty.
--- Author: Ricardo F Tafas Jr
--- 2019
----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
+----------------------------------------------------------------------------------
 library ieee;
     use ieee.std_logic_1164.all;
 library stdblocks;
@@ -26,7 +31,7 @@ architecture simulation of spi_axi_top_tb is
   constant  ID_VALUE      : integer := 0;
   constant  ADDR_BYTE_NUM : integer := 4;
   constant  DATA_BYTE_NUM : integer := 4;
-  constant  serial_num_rw : boolean := true;
+  constant  serial_num_rw : boolean := false;
 
   signal    rst_i         : std_logic;
   signal    mclk_i        : std_logic := '0';
@@ -38,7 +43,7 @@ architecture simulation of spi_axi_top_tb is
 
   constant  DID_i         : std_logic_vector(DATA_BYTE_NUM*8-1 downto 0) := x"76543210";
   constant  UID_i         : std_logic_vector(DATA_BYTE_NUM*8-1 downto 0) := x"AAAAAAAA";
-  constant  serial_num_i  : std_logic_vector(DATA_BYTE_NUM*8-1 downto 0) := x"00000000";
+  constant  serial_num_i  : std_logic_vector(DATA_BYTE_NUM*8-1 downto 0) := x"A4A4A4A4";
   signal    irq_i         : std_logic_vector(7 downto 0)                 := x"86";
   signal    irq_o         : std_logic;
 
@@ -73,15 +78,15 @@ architecture simulation of spi_axi_top_tb is
   constant spi_half_period : time := spi_period;
 
   type spi_buffer_t is array (NATURAL RANGE <>) of std_logic_vector(7 downto 0);
-  signal RDSN_c        : data_vector_t(4 downto 0) := (x"C3", others => x"00");
-  signal WRSN_c        : data_vector_t(4 downto 0) := (x"C2", x"89", x"AB", x"CD", x"EF" );
-  signal RDID_c        : data_vector_t(4 downto 0) := (x"9F", others => x"00");
-  signal RUID_c        : data_vector_t(4 downto 0) := (x"4C", others => x"00");
+  signal RDSN_c        : spi_buffer_t(4 downto 0) := (x"C3", others => x"00");
+  signal WRSN_c        : spi_buffer_t(4 downto 0) := (x"C2", x"89", x"AB", x"CD", x"EF" );
+  signal RDID_c        : spi_buffer_t(4 downto 0) := (x"9F", others => x"00");
+  signal RUID_c        : spi_buffer_t(4 downto 0) := (x"4C", others => x"00");
 
-  signal IRQRD_c       : data_vector_t(1 downto 0) := (x"A2", x"00");
-  signal IRQWR_c       : data_vector_t(1 downto 0) := (x"A3", x"0F");
-  signal IRQMRD_c      : data_vector_t(1 downto 0) := (x"D2", x"00");
-  signal IRQMWR_c      : data_vector_t(1 downto 0) := (x"D3", x"F0");
+  signal IRQRD_c       : spi_buffer_t(1 downto 0) := (x"A2", x"00");
+  signal IRQWR_c       : spi_buffer_t(1 downto 0) := (x"A3", x"0F");
+  signal IRQMRD_c      : spi_buffer_t(1 downto 0) := (x"D2", x"00");
+  signal IRQMWR_c      : spi_buffer_t(1 downto 0) := (x"D3", x"F0");
 
   --read/write
   signal SIMPLE_READ_c   : spi_buffer_t(8 downto 0) := (READ_c, others => x"00");
@@ -97,8 +102,25 @@ architecture simulation of spi_axi_top_tb is
     x"34"
   );
 
+  signal SIMPLE_READ_2_c   : spi_buffer_t(12 downto 0) := (READ_c, others => x"00");
+  signal SIMPLE_WRITE_2_c  : spi_buffer_t(12 downto 0) := (
+    WRITE_c,
+    x"00",
+    x"00",
+    x"00",
+    x"00",
+    x"AB",
+    x"CD",
+    x"12",
+    x"34",
+    x"56",
+    x"78",
+    x"9A",
+    x"BC"
+  );
+
   --read/write
-  signal FAST_READ_WORD_c     : spi_buffer_t(9 downto 0) := (FAST_READ_c, others => x"00");
+  signal FAST_READ_WORD_c     : spi_buffer_t(13 downto 0) := (FAST_READ_c, others => x"00");
   signal FAST_WRITE_WORD_c    : spi_buffer_t(13 downto 0) := (
     FAST_WRITE_c,
     x"00",
@@ -116,12 +138,12 @@ architecture simulation of spi_axi_top_tb is
     x"BC"
   );
 
-  signal spi_rxdata_s    : data_vector_t(15 downto 0);
+  signal spi_rxdata_s    : spi_buffer_t(15 downto 0);
   signal spi_rxdata_en   : std_logic;
 
   procedure spi_bus (
-    signal data_i  : in  data_vector_t;
-    signal data_o  : out data_vector_t;
+    signal data_i  : in  spi_buffer_t;
+    signal data_o  : out spi_buffer_t;
     signal spcs    : out std_logic;
     signal spck    : out std_logic;
     signal miso    : in  std_logic;
@@ -179,14 +201,16 @@ begin
     --wait for 35 ns;
     --spi_bus(IRQMRD_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
     --wait for 35 ns;
-    --READ/WRITE TEST
+    --READ/WRITE TEST - 1 beat
     --spi_bus(SIMPLE_READ_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
+    --READ/WRITE TEST - 2 beat
+    --spi_bus(SIMPLE_READ_2_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
     --wait for 35 ns;
     --spi_bus(SIMPLE_WRITE_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
     --FAST_READ/WRITE
-    --spi_bus(FAST_READ_WORD_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
+    spi_bus(FAST_READ_WORD_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
     --wait for 35 ns;
-    spi_bus(FAST_WRITE_WORD_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
+    --spi_bus(FAST_WRITE_WORD_c,spi_rxdata_s,spcs_i,spck_i,miso_o,mosi_i);
     wait;
   end process;
 
@@ -248,7 +272,7 @@ begin
   M_AXI_BID     <= (others=>'0');
   M_AXI_ARREADY <= '1';
   M_AXI_RVALID  <= '1';
-  M_AXI_RDATA   <= x"ABCD1234";
+  M_AXI_RDATA   <= x"4321ABCD"  when M_AXI_ARADDR(2) = '0' else x"56789ABC";
   M_AXI_RRESP   <= "00";
   M_AXI_RID     <= (others=>'0');
   M_AXI_RLAST   <= '0';

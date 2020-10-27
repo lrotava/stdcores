@@ -1,12 +1,17 @@
-----------------------------------------------------------------------------------------------------------
--- SPI-AXI-Controller Machine.
--- Ricardo Tafas
--- This is open source code licensed under LGPL.
--- By using it on your system you agree with all LGPL conditions.
--- This code is provided AS IS, without any sort of warranty.
--- Author: Ricardo F Tafas Jr
--- 2019
----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+--Copyright 2020 Ricardo F Tafas Jr
+
+--Licensed under the Apache License, Version 2.0 (the "License"); you may not
+--use this file except in compliance with the License. You may obtain a copy of
+--the License at
+
+--   http://www.apache.org/licenses/LICENSE-2.0
+
+--Unless required by applicable law or agreed to in writing, software distributed
+--under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+--OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+--the specific language governing permissions and limitations under the License.
+----------------------------------------------------------------------------------
 --The SPI control machine implements an SPI-FRAM interface.
 -- Check for Microchip 23LCV1024
 --
@@ -162,7 +167,7 @@ begin
       spcs_i       => spcs_i,
       spi_busy_o   => spi_busy_s,
       spi_rxen_o   => spi_rxen_s,
-      spi_txen_o   => open,
+      spi_txen_o   => spi_txen_s,
       spi_rxdata_o => spi_rxdata_s,
       spi_txdata_i => spi_txdata_s
     );
@@ -184,7 +189,7 @@ begin
         bus_addr_o   => bus_addr_s,
         spi_busy_i   => spi_busy_s,
         spi_rxen_i   => spi_rxen_s,
-        spi_txen_o   => spi_txen_s,
+        spi_txen_i   => spi_txen_s,
         spi_txdata_o => spi_txdata_s,
         spi_rxdata_i => spi_rxdata_s,
         RSTIO_o      => RSTIO_o,
