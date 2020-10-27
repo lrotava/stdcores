@@ -18,15 +18,15 @@ library stdcores;
 library expert;
 use expert.std_logic_expert.all;
 
-library avl_utils_lib;
-use avl_utils_lib.axi_pkg.all;
-use avl_utils_lib.axil_pkg.all;
-use avl_utils_lib.avl_clock_utils_pkg.all;
+library avl_axi_lib;
+use avl_axi_lib.axi_pkg.all;
+use avl_axi_lib.axil_pkg.all;
 
 library avl_sim_lib;
-use avl_sim_lib.avl_simulators_pkg.all;
+use avl_sim_lib.avl_simulators_pkg.avl_axils_sim;
 
 library tb_lib;
+use tb_lib.avl_clock_utils_pkg.all;
 
 library osvvm;
 use osvvm.RandomPkg.all;
@@ -68,7 +68,7 @@ architecture tb of vunit_spi_axi_top_2_tb is
     signal axilm_m2s : axil_m2s_t;
     signal axilm_s2m : axil_s2m_t;
   
-    constant frequency_mhz   : real := 12.000;
+    constant frequency_mhz   : real := 25.000;
     constant spi_period      : time := ( 1.000 / frequency_mhz) * 1 us;
     constant spi_half_period : time := spi_period/2;
   
@@ -109,7 +109,7 @@ begin
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
             serial_num_rw => serial_num_rw,
-            native_clock_mode => true
+            native_clock_mode => false
         )
         port map (
             rst_i         => rst_i,

@@ -52,18 +52,26 @@ ui.add_verification_components()
 run_src_lib = ui.add_library("stdblocks")
 run_src_lib.add_source_files("../../../stdblocks/sync_lib/*.vhd", allow_empty=False)
 run_src_lib = ui.add_library("stdcores")
-run_src_lib.add_source_files("../../../stdcores/*/*.vhd", allow_empty=False)
+run_src_lib.add_source_files("../../../stdcores/spi_axim/*.vhd", allow_empty=False)
 run_src_lib = ui.add_library("expert")
 run_src_lib.add_source_files("../../../stdexpert/src/*.vhd", allow_empty=False)
 
 run_avl_utils_lib = ui.add_library("avl_utils_lib")
-run_avl_utils_lib.add_source_files("../../../avl_packages/src/*.vhd", allow_empty=True)
 run_avl_utils_lib.add_source_files("../../../stdexpert/src/*.vhd", allow_empty=False)
-run_avl_utils_lib.add_source_files("../../../avl_clock_utils/src/*_pkg.vhd", allow_empty=False)
+run_avl_utils_lib.add_source_files("../../../avl_packages/src/avl_utils_pkg.vhd", allow_empty=False)
+run_avl_utils_lib.add_source_files("../../../avl_packages/src/sl_matrix_pkg.vhd", allow_empty=False)
+run_avl_utils_lib.add_source_files("../../../avl_sync_utils/src/*.vhd", allow_empty=False)
 
 
 run_src_lib2 = ui.add_library("src_lib")
-run_src_lib2.add_source_files("../../../avl_clock_utils/src/*.vhd", allow_empty=False)
+
+run_avl_axi_lib = ui.add_library("avl_axi_lib")
+run_avl_axi_lib.add_source_files("../../../avl_packages/src/axi*.vhd", allow_empty=False)
+run_avl_axi_lib.add_source_files("../../../avl_axil2regs_w_fifos/src/*.vhd", allow_empty=False)
+
+run_ram_lib = ui.add_library("avl_ram_lib")
+run_ram_lib.add_source_files("../../../avl_ram_pkg/src/*.vhd", allow_empty=False)
+run_ram_lib.add_source_files("../../../avl_fifos/src/*.vhd", allow_empty=False)
 
 
 run_avl_sim_lib = ui.add_library("avl_sim_lib")
@@ -72,6 +80,7 @@ run_avl_sim_lib.add_source_files("../../../avl_simulators/src/*.vhd", allow_empt
 #Add tb sources.
 run_tb_lib = ui.add_library("tb_lib")
 run_tb_lib.add_source_files("*.vhd")
+run_tb_lib.add_source_files("../../../avl_clock_utils/src/avl_clock_utils_pkg.vhd", allow_empty=False)
 
 ##############################################################################
 ##############################################################################
