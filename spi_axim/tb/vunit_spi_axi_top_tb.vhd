@@ -17,6 +17,7 @@ use std.textio.all;
 --
 library stdblocks;
 library stdcores;
+use stdcores.spi_axim_pkg.all;
 library expert;
 use expert.std_logic_expert.all;
 
@@ -47,6 +48,8 @@ end;
 
 architecture tb of vunit_spi_axi_top_tb is
 
+    constant cpol_c : std_logic := '0';
+    constant cpha_c : std_logic := '0';
     constant  ID_WIDTH      : integer := 1;
     constant  ID_VALUE      : integer := 0;
     constant  ADDR_BYTE_NUM : integer := 4;
@@ -80,7 +83,6 @@ architecture tb of vunit_spi_axi_top_tb is
   
     signal IRQRD_c       : data_vector_t(1 downto 0) := (x"A2", x"00");
     signal IRQWR_c       : data_vector_t(1 downto 0) := (x"A3", x"0F");
-    signal IRQMRD_c      : data_vector_t(1 downto 0) := (x"D2", x"00");
     signal IRQMWR_c      : data_vector_t(1 downto 0) := (x"D3", x"F0");
   
     signal WRITE_c       : std_logic_vector(7 downto 0) := x"02";
@@ -99,6 +101,7 @@ architecture tb of vunit_spi_axi_top_tb is
     signal STAT_c        : std_logic_vector(7 downto 0) := x"A5";
     signal RDID_c        : std_logic_vector(7 downto 0) := x"9F";
     signal RUID_c        : std_logic_vector(7 downto 0) := x"4C";
+    signal IRQMRD_c      : std_logic_vector(7 downto 0) := x"D2";
   
     signal spi_txdata_s    : data_vector_t(63 downto 0);
     signal spi_rxdata_s    : data_vector_t(63 downto 0);
@@ -111,14 +114,14 @@ begin
 
     spi_axi_top_i : entity stdcores.spi_axi_top
         generic map (
-            CPOL          => '0',
-            CPHA          => '1',
+            CPOL          => cpol_c,
+            CPHA          => cpha_c,
             ID_WIDTH      => ID_WIDTH,
             ID_VALUE      => ID_VALUE,
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
             serial_num_rw => serial_num_rw,
-            native_clock_mode => false
+            clock_mode => native
         )
         port map (
             rst_i         => rst_i,
@@ -192,7 +195,7 @@ begin
 
         procedure tb_init is
         begin
-            spck_s <= '0';
+            spck_s <= '0' xor cpol_c;
             spcs_s <= '1';
             mosi_s <= 'H';
 
@@ -211,19 +214,36 @@ begin
             wait for 300 ns;
             for k in 0 to length_i-1 loop
                 for j in 7 downto 0 loop
-                    spck_s <= '1';
-                    mosi_s <= data_i(k)(j);
-                    wait for spi_half_period;
-                    spck_s      <= '0';
-                    data_rx_v(j) := miso_s;
-                    wait for spi_half_period;
+                    if (cpha_c = '0') then
+                        mosi_s <= data_i(k)(j);
+                        wait for spi_half_period;
+                    end if;
+
+                    spck_s <= '1' xor cpol_c;
+
+                    if (cpha_c = '0') then
+                        data_rx_v(j) := miso_s;
+                        wait for spi_half_period;
+                    end if;
+
+                    if (cpha_c = '1') then
+                        mosi_s <= data_i(k)(j);
+                        wait for spi_half_period;
+                    end if;
+
+                    spck_s <= '0' xor cpol_c;
+
+                    if (cpha_c = '1') then
+                        data_rx_v(j) := miso_s;
+                        wait for spi_half_period;
+                    end if;
                 end loop;
 
                 -- Update the output
                 data_o(k) <= data_rx_v;
             end loop;
             spcs_s <= '1';
-            spck_s <= '0';
+            spck_s <= '0' xor cpol_c;
             mosi_s <= 'H';
 
             wait for 2*spi_half_period;
@@ -321,6 +341,21 @@ begin
 
         end procedure;
 
+        procedure test_read_irq is
+            variable address_v : std_logic_vector(ADDR_BYTE_NUM*8-1 downto 0);
+            variable expected_value_v : std_logic_vector(7 downto 0);
+        begin
+            spi_txdata_s(0) <= IRQMRD_c;
+
+            wait for 100 ns;
+
+            -- 1 word
+            spi_bus(spi_txdata_s, spi_rxdata_s, 1 + 1);
+
+            wait for 1000 ns;
+
+        end procedure;
+
     begin
         test_runner_setup(runner, runner_cfg);
         test_init;
@@ -356,6 +391,13 @@ begin
                 test_read_id;
                 wait for 10 ns;
                 test_read_id;
+
+                test_runner_cleanup(runner);
+
+            elsif run("read.irq") then
+                info("Reads IRQ from SPI");
+                wait for 100 ns;
+                test_read_irq;
 
                 test_runner_cleanup(runner);
             end if;

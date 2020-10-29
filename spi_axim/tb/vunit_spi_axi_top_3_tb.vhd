@@ -111,7 +111,7 @@ begin
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
             serial_num_rw => serial_num_rw,
-            native_clock_mode => false
+            clock_mode => oversampled
         )
         port map (
             rst_i         => rst_i,

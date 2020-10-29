@@ -15,6 +15,7 @@ use std.textio.all;
 --
 library stdblocks;
 library stdcores;
+use stdcores.spi_axim_pkg.all;
 library expert;
 use expert.std_logic_expert.all;
 
@@ -45,6 +46,8 @@ end;
 
 architecture tb of vunit_spi_axi_top_2_tb is
 
+    constant cpol_c : std_logic := '1';
+    constant cpha_c : std_logic := '1';
     constant  ID_WIDTH      : integer := 1;
     constant  ID_VALUE      : integer := 0;
     constant  ADDR_BYTE_NUM : integer := 4;
@@ -102,14 +105,14 @@ begin
 
     spi_axi_top_i : entity stdcores.spi_axi_top
         generic map (
-            CPOL          => '0',
-            CPHA          => '1',
+            CPOL          => cpol_c,
+            CPHA          => cpha_c,
             ID_WIDTH      => ID_WIDTH,
             ID_VALUE      => ID_VALUE,
             ADDR_BYTE_NUM => ADDR_BYTE_NUM,
             DATA_BYTE_NUM => DATA_BYTE_NUM,
             serial_num_rw => serial_num_rw,
-            native_clock_mode => false
+            clock_mode => native
         )
         port map (
             rst_i         => rst_i,
@@ -182,7 +185,7 @@ begin
 
         procedure tb_init is
         begin
-            spck_s <= '0';
+            spck_s <= '0' xor cpol_c;
             spcs_s <= '1';
             mosi_s <= 'H';
 
@@ -197,22 +200,40 @@ begin
         ) is
             variable data_rx_v : std_logic_vector(7 downto 0);
         begin
+            spcs_s <= '0';
+            wait for 300 ns;
             for k in 0 to length_i-1 loop
                 for j in 7 downto 0 loop
-                    spcs_s <= '0';
-                    spck_s <= '1';
-                    mosi_s <= data_i(k)(j);
-                    wait for spi_half_period;
-                    spck_s      <= '0';
-                    data_rx_v(j) := miso_s;
-                    wait for spi_half_period;
+                    if (cpha_c = '0') then
+                        mosi_s <= data_i(k)(j);
+                        wait for spi_half_period;
+                    end if;
+
+                    spck_s <= '1' xor cpol_c;
+
+                    if (cpha_c = '0') then
+                        data_rx_v(j) := miso_s;
+                        wait for spi_half_period;
+                    end if;
+
+                    if (cpha_c = '1') then
+                        mosi_s <= data_i(k)(j);
+                        wait for spi_half_period;
+                    end if;
+
+                    spck_s <= '0' xor cpol_c;
+
+                    if (cpha_c = '1') then
+                        data_rx_v(j) := miso_s;
+                        wait for spi_half_period;
+                    end if;
                 end loop;
 
                 -- Update the output
                 data_o(k) <= data_rx_v;
             end loop;
             spcs_s <= '1';
-            spck_s <= '0';
+            spck_s <= '0' xor cpol_c;
             mosi_s <= 'H';
 
             wait for 2*spi_half_period;
